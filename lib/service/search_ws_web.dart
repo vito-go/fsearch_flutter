@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:html';
 
 import 'package:flutter/foundation.dart';
-import 'package:fsearch_flutter/service/request.dart';
 
 import '../util/util.dart';
 
 Future<StreamSubscription<dynamic>?> searchText({
   required String appName,
+  required String searchPathWS,
   required int nodeId,
   required List<String> files,
   required List<String> kw,
@@ -24,10 +24,13 @@ Future<StreamSubscription<dynamic>?> searchText({
     'files': files,
     'kw': kw,
   };
-  final path = globalSearchPath;
+  final path = searchPathWS;
   final query = Uri(queryParameters: params).query;
+// Because there may be a large amount of content transmitted, we use websocket
+// to transmit the search result content in batches instead of using http
   String url = "ws://${window.location.host}$path?$query";
   if (kDebugMode) {
+    // you can modify the port 9097 to that really is
     url = "ws://127.0.0.1:9097$path?$query";
   }
   myPrint("url is : $url");

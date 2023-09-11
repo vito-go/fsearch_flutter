@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fsearch_flutter/service/request.dart';
-
 import '../util/util.dart';
 
 Future<StreamSubscription<dynamic>?> searchText({
   required String appName,
+  required String searchPathWS,
   required int nodeId,
   required List<String> files,
   required List<String> kw,
@@ -27,8 +26,11 @@ Future<StreamSubscription<dynamic>?> searchText({
   header["Origin"] = "http://127.0.0.1";
   WebSocket socket;
   try {
-    socket = await WebSocket.connect(
-        'ws://127.0.0.1:9097$globalSearchPath?$query',
+    // Because there may be a large amount of content transmitted, we use websocket
+    // to transmit the search result content in batches instead of using http
+    // please modify the url below in online environment
+    final String url = 'ws://127.0.0.1:9097$searchPathWS?$query';
+    socket = await WebSocket.connect(url,
         protocols: ["mychat"],
         headers: header,
         customClient: HttpClient()

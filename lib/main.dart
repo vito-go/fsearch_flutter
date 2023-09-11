@@ -134,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String textFilter = '';
 
-  void aboutOnTap( ) async {
+  void aboutOnTap() async {
     String version = "0.0.1";
     String applicationName = "File Search";
     if (context.mounted) {
@@ -230,12 +230,13 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  String get searchPathWS => nodeConfigInfo.searchPathWS;
+
   @override
   void initState() {
     super.initState();
     homeInfo(context).then((value) {
       nodeConfigInfo = value;
-      globalSearchPath = value.searchPathWS;
       setState(() {});
     });
   }
@@ -258,8 +259,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final mediaHeight = MediaQuery.of(context).size.height;
-    final right =
-        TextSearchRegion(appName: appName, nodeId: nodeId, files: fileChecked);
+    final right = TextSearchRegion(
+      appName: appName,
+      nodeId: nodeId,
+      files: fileChecked,
+      searchPathWS: searchPathWS,
+    );
     final Widget body = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -301,10 +306,13 @@ class _MyHomePageState extends State<MyHomePage> {
             : null,
         title: Text(widget.title),
         actions: [
-          IconButton(onPressed: (){
-            launchUrl(Uri.parse("https://github.com/vito-go/fsearch"));
-          }, icon: githubSVG),
-          IconButton(onPressed: aboutOnTap, icon: const Icon(Icons.help_outline)),
+          IconButton(
+              onPressed: () {
+                launchUrl(Uri.parse("https://github.com/vito-go/fsearch"));
+              },
+              icon: githubSVG),
+          IconButton(
+              onPressed: aboutOnTap, icon: const Icon(Icons.help_outline)),
           IconButton(
               onPressed: changeThemeMode,
               icon: const Icon(Icons.sunny, color: Colors.white70))

@@ -15,10 +15,12 @@ class TextSearchRegion extends StatefulWidget {
   const TextSearchRegion(
       {super.key,
       required this.appName,
+      required this.searchPathWS,
       required this.nodeId,
       required this.files});
 
   final String appName;
+  final String searchPathWS;
   final int nodeId;
   final List<String> files;
 
@@ -63,6 +65,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     await subscription?.cancel();
     subscription = await searchText(
         appName: widget.appName,
+        searchPathWS: widget.searchPathWS,
         nodeId: widget.nodeId,
         kw: kw,
         files: widget.files,

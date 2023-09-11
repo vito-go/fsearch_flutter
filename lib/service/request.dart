@@ -18,5 +18,3 @@ Future<NodeConfigInfo> homeInfo(BuildContext context) async {
   }
   return result.data ?? NodeConfigInfo();
 }
-
-String globalSearchPath = "";
