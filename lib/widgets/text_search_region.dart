@@ -107,7 +107,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
   FocusNode focusNode = FocusNode();
   int fontSize = 18;
   Widget noResult = Center(
-      child: SelectableText("无结果",
+      child: SelectableText("no result",
           style: TextStyle(
               color: prefs.themeMode == ThemeMode.light
                   ? Colors.black
