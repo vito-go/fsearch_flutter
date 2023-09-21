@@ -37,6 +37,11 @@ class TextSearchRegionState extends State<TextSearchRegion> {
   StreamSubscription? subscription;
 
   Future<void> _search() async {
+    if (loading) {
+      setState(() {
+        loading = false;
+      });
+    }
     if (widget.appName == "") {
       myToast(context, "please select a app");
       return;
@@ -80,7 +85,8 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         onClose: () {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
             setState(() {
-              searchDone = false;
+              searchDone = true;
+              loading=false;
             });
           });
         });
@@ -88,6 +94,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
 
   ScrollController scrollController = ScrollController();
   bool searchDone = false;
+  bool loading = false;
 
   @override
   void dispose() {
@@ -107,6 +114,27 @@ class TextSearchRegionState extends State<TextSearchRegion> {
                   : Colors.white,
               fontSize: 48)));
 
+  late final searchLoading = SizedBox(
+    width: 50,
+    child: UnconstrainedBox(
+        child: SizedBox(
+      width: 20,
+      height: 20,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        // color: widget.progressColor,
+        valueColor: AlwaysStoppedAnimation<Color>(
+            prefs.themeMode == ThemeMode.dark
+                ? Colors.white
+                : Theme.of(context).primaryColor),
+      ),
+    )),
+  );
+  late final sizeBoxText = const SizedBox(
+    width: 50,
+    child: UnconstrainedBox(child: Text("Search")),
+  );
+
   @override
   Widget build(BuildContext context) {
     CupertinoSearchTextField textField = CupertinoSearchTextField(
@@ -123,11 +151,11 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         },
         placeholder:
             "Please enter the keywords, separate multiple keywords with semicolons (;)");
-    MyButton myButtonSearch = MyButton(
-        text: "Search",
-        onPressed: _search,
-        buttonStyleBtn: ButtonStyleBtn.elevatedButtonIcon,
-        width: 50);
+    // MyButton myButtonSearch = MyButton(
+    //     text: "Search",
+    //     onPressed: _search,
+    //     buttonStyleBtn: ButtonStyleBtn.elevatedButtonIcon,
+    //     width: 50);
     final view = ListView.separated(
       controller: scrollController,
       itemCount: searchResult.length,
@@ -144,7 +172,11 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         return const Divider();
       },
     );
-
+    Widget myButtonSearch = ElevatedButton.icon(
+        onPressed: _search,
+        icon: const Icon(Icons.search),
+        label:
+            SizedBox(width: 50, child: loading ? searchLoading : sizeBoxText));
     final Slider slider = Slider(
         focusNode: focusNode,
         value: fontSize.toDouble(),
@@ -160,7 +192,10 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     IconButton buttonResetFontSize = IconButton(
         onPressed: () {
           setState(() {
+            loading = false;
             fontSize = 18;
+            searchDone = false;
+            searchResult = [];
             focusNode.unfocus();
           });
         },
