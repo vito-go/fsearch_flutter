@@ -34,8 +34,8 @@ class NodeInfo {
 
 class NodeConfigInfo {
   List<ClusterNode> clusterNodes = [];
-  String searchPathWS = "";
   String searchPathHTTP = "";
+  String searchPathSSE = "";
 
   NodeConfigInfo();
 
@@ -90,7 +90,7 @@ class NodeConfigInfo {
     for (var ele in json["clusterNodes"] ?? []) {
       clusterNodes.add(ClusterNode.fromJson(ele));
     }
-    searchPathWS = json['searchPathWS'] ?? '';
     searchPathHTTP = json['searchPathHTTP'] ?? '';
+    searchPathSSE = json['searchPathSSE'] ?? '';
   }
 }

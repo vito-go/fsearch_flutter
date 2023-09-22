@@ -35,8 +35,6 @@ class RespData<T> {
   }
 }
 
-
-
 Future<RespData<T>> dioTryGet<T>(
     BuildContext? context,
     String www, {
@@ -63,8 +61,6 @@ Future<RespData<T>> dioTryGet<T>(
       return RespData(code: -1);
     }
     final String? respData = respBody.data;
-    myPrint(respData);
-
     if (respData == null) return RespData(code: -1);
     return RespData.fromJson(jsonDecode(respData), fromJson);
   } catch (e) {

@@ -7,7 +7,6 @@ import 'package:fsearch_flutter/service/search_ws_no_web.dart'
     if (dart.library.html) 'package:fsearch_flutter/service/search_ws_web.dart';
 
 import 'package:fsearch_flutter/util/util.dart';
-import 'package:fsearch_flutter/widgets/loading_button.dart';
 
 import '../util/prefs/prefs.dart';
 
@@ -15,12 +14,12 @@ class TextSearchRegion extends StatefulWidget {
   const TextSearchRegion(
       {super.key,
       required this.appName,
-      required this.searchPathWS,
+      required this.searchPathSSE,
       required this.nodeId,
       required this.files});
 
   final String appName;
-  final String searchPathWS;
+  final String searchPathSSE;
   final int nodeId;
   final List<String> files;
 
@@ -60,9 +59,12 @@ class TextSearchRegionState extends State<TextSearchRegion> {
           context, "Please select at least one file when not selecting a host");
       return;
     }
+    myPrint("search start");
+
     setState(() {
       searchResult.clear();
       searchDone = false;
+      loading = true;
     });
     if (searchResult.isNotEmpty) {
       scrollController.jumpTo(0);
@@ -70,7 +72,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     await subscription?.cancel();
     subscription = await searchText(
         appName: widget.appName,
-        searchPathWS: widget.searchPathWS,
+        searchPathSSE: widget.searchPathSSE,
         nodeId: widget.nodeId,
         kw: kw,
         files: widget.files,
@@ -78,15 +80,15 @@ class TextSearchRegionState extends State<TextSearchRegion> {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
             setState(() {
               searchResult.add(data);
-              myPrint(searchResult.length);
             });
           });
         },
         onClose: () {
           WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            myPrint("search close");
             setState(() {
               searchDone = true;
-              loading=false;
+              loading = false;
             });
           });
         });
@@ -135,6 +137,20 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     child: UnconstrainedBox(child: Text("Search")),
   );
 
+  Widget widgetWrapResult() {
+    List<Widget> result = [];
+    for (var e in searchResult) {
+      result.add(SelectableText(
+        e,
+        style: TextStyle(
+            fontSize: fontSize.toDouble(),
+            // color: Colors.white,
+            height: 1.37),
+      ));
+    }
+    return Wrap(children: result);
+  }
+
   @override
   Widget build(BuildContext context) {
     CupertinoSearchTextField textField = CupertinoSearchTextField(
@@ -147,21 +163,88 @@ class TextSearchRegionState extends State<TextSearchRegion> {
           controller.text = "";
           setState(() {
             searchResult.clear();
+            searchDone = false;
           });
         },
         placeholder:
             "Please enter the keywords, separate multiple keywords with semicolons (;)");
-    // MyButton myButtonSearch = MyButton(
-    //     text: "Search",
-    //     onPressed: _search,
-    //     buttonStyleBtn: ButtonStyleBtn.elevatedButtonIcon,
-    //     width: 50);
-    final view = ListView.separated(
+    final bool isDark = prefs.themeMode == ThemeMode.dark;
+    ListView view = ListView.separated(
       controller: scrollController,
       itemCount: searchResult.length,
       itemBuilder: (BuildContext context, int index) {
+        final text = searchResult[index];
+        if (text != '') {
+          List<InlineSpan>? children = [];
+          String token = '[info]';
+          List<String> infos = text.split(token);
+          if (infos.length == 1) {
+            token = '[error]';
+            infos = text.split(token);
+          }
+
+          if (infos.length == 1) {
+            token = '[INFO]';
+            infos = text.split(token);
+          }
+          if (infos.length == 1) {
+            token = '[warn]';
+            infos = text.split(token);
+          }
+          if (infos.length == 1) {
+            token = '[warning]';
+            infos = text.split(token);
+          }
+          if (infos.length == 1) {
+            token = '[WARN]';
+            infos = text.split(token);
+          }
+
+          if (infos.length == 1) {
+            token = '[ERROR]';
+            infos = text.split(token);
+          }
+          if (infos.length == 1) {
+            token = '[debug]';
+            infos = text.split(token);
+          }
+          if (infos.length == 1) {
+            token = '[DEBUG]';
+            infos = text.split(token);
+          }
+
+          for (var i = 0; i < infos.length; i++) {
+            final info = infos[i];
+            children.add(TextSpan(
+                text: info,
+                style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: fontSize.toDouble(),
+                    fontWeight: FontWeight.normal)));
+            if (i != infos.length - 1) {
+              Color color;
+              if (token == '[error]' || token == '[ERROR]') {
+                color = Colors.red;
+              } else {
+                color = Colors.green;
+              }
+
+              children.add(TextSpan(
+                  text: token,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize.toDouble(),
+                  )));
+            }
+          }
+          final TextSpan textSpan = TextSpan(children: children);
+
+          return SelectableText.rich(textSpan);
+        }
+
         return SelectableText(
-          searchResult[index],
+          text,
           style: TextStyle(
               fontSize: fontSize.toDouble(),
               // color: Colors.white,
@@ -169,9 +252,12 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         );
       },
       separatorBuilder: (BuildContext context, int index) {
-        return const Divider();
+        return const Text("\n");
       },
     );
+    // Widget view = SingleChildScrollView(
+    //   child: widgetWrapResult(),
+    // );
     Widget myButtonSearch = ElevatedButton.icon(
         onPressed: _search,
         icon: const Icon(Icons.search),
@@ -192,6 +278,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     IconButton buttonResetFontSize = IconButton(
         onPressed: () {
           setState(() {
+            subscription?.cancel();
             loading = false;
             fontSize = 18;
             searchDone = false;
@@ -210,8 +297,22 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         const SizedBox(width: 20),
         buttonResetFontSize,
         slider,
-        Text("$fontSize"),
+        Align(
+          alignment: AlignmentDirectional.center,
+          child: Text("$fontSize"),
+        ),
         const SizedBox(width: 5),
+        IconButton(
+            onPressed: () {
+              if (searchResult.isEmpty) {
+                myToast(context, "no result");
+                return;
+              }
+              saveContent(searchResult.join('\n'), "fsearch.log");
+            },
+            icon: Icon(Icons.save_alt,
+                color: isDark ? Colors.white70 : Colors.black)),
+        const SizedBox(width: 10),
       ],
     );
     // final body =

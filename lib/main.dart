@@ -1,9 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:fsearch_flutter/service/request.dart';
+import 'package:fsearch_flutter/service/search_ws_no_web.dart'
+    if (dart.library.html) 'package:fsearch_flutter/service/search_ws_web.dart';
 
 import 'package:fsearch_flutter/service/types.dart';
 import 'package:fsearch_flutter/util/github_logo.dart';
@@ -57,10 +55,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   NodeConfigInfo nodeConfigInfo = NodeConfigInfo();
-
   String appName = '';
   int nodeId = 0;
-
+  String textFilter = '';
   List<String> get appNames => nodeConfigInfo.appNames;
 
   List<String> appNamesWithFilter(String filter) {
@@ -72,8 +69,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return items;
   }
-
-  List<String> get hosts => nodeConfigInfo.hosts(appName);
 
   List<String> get allFiles => nodeConfigInfo.allFiles(appName);
 
@@ -128,11 +123,11 @@ class _MyHomePageState extends State<MyHomePage> {
             }
             setState(() {});
           },
-          title: SelectableText(items[index - 1]));
+          title: Text(items[index - 1]));
     });
   }
 
-  String textFilter = '';
+
 
   void aboutOnTap() async {
     String version = "0.0.1";
@@ -161,6 +156,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  changeThemeMode() {
+    switch (prefs.themeMode) {
+      case ThemeMode.system:
+        break;
+      case ThemeMode.light:
+        prefs.themeMode = ThemeMode.dark;
+        RestartApp.restart(context);
+        break;
+      case ThemeMode.dark:
+        prefs.themeMode = ThemeMode.light;
+        RestartApp.restart(context);
+        break;
+    }
+  }
+
   List<Widget> buildRadioAppNames() {
     List<Widget> children = [
       ListTile(
@@ -174,6 +184,10 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: const Icon(Icons.refresh)),
       ),
       CupertinoSearchTextField(
+        style: TextStyle(
+          color:
+              prefs.themeMode == ThemeMode.light ? Colors.black : Colors.white,
+        ),
         onChanged: (v) {
           textFilter = v;
           setState(() {});
@@ -213,12 +227,12 @@ class _MyHomePageState extends State<MyHomePage> {
     final infos = nodeConfigInfo.nodeInfos(appName);
     for (var info in infos) {
       items.add(RadioListTile<int>(
-          title: SelectableText(info.hostName),
+          title: Text(info.hostName),
           value: info.nodeId,
           groupValue: nodeId,
           onChanged: (v) {
             nodeId = v ?? nodeId;
-            fileCheckMap.clear();
+            // fileCheckMap.clear();
             setState(() {});
           }));
     }
@@ -230,8 +244,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  String get searchPathWS => nodeConfigInfo.searchPathWS;
-
   @override
   void initState() {
     super.initState();
@@ -241,21 +253,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  changeThemeMode() {
-    switch (prefs.themeMode) {
-      case ThemeMode.system:
-        break;
-      case ThemeMode.light:
-        prefs.themeMode = ThemeMode.dark;
-        RestartApp.restart(context);
-        break;
-      case ThemeMode.dark:
-        prefs.themeMode = ThemeMode.light;
-        RestartApp.restart(context);
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final mediaHeight = MediaQuery.of(context).size.height;
@@ -263,7 +260,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appName: appName,
       nodeId: nodeId,
       files: fileChecked,
-      searchPathWS: searchPathWS,
+      searchPathSSE: nodeConfigInfo.searchPathSSE,
     );
     final Widget body = Row(
       mainAxisSize: MainAxisSize.min,
