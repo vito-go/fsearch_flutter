@@ -32,7 +32,7 @@ class TextSearchRegion extends StatefulWidget {
 class TextSearchRegionState extends State<TextSearchRegion> {
   List<String> searchResult = [];
 
-  final controller = TextEditingController();
+  final controller = TextEditingController(text: " ");
   StreamSubscription? subscription;
 
   Future<void> _search() async {
@@ -45,12 +45,13 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       myToast(context, "please select a app");
       return;
     }
-    if (controller.text == "") {
+    final text = controller.text.trim();
+    if (text == "") {
       myToast(context, "please enter the keywords");
       return;
     }
     List<String> kw = [];
-    final splits = controller.text.split(";");
+    final splits = text.split(";");
     for (var ele in splits) {
       kw.add(ele.trim());
     }
@@ -103,6 +104,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     super.dispose();
     myPrint("dispose search");
     scrollController.dispose();
+    controller.dispose();
     subscription?.cancel();
   }
 
@@ -160,7 +162,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
                 ? Colors.black
                 : Colors.white),
         onSuffixTap: () {
-          controller.text = "";
+          controller.text = " ";
           setState(() {
             searchResult.clear();
             searchDone = false;
