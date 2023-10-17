@@ -58,6 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String appName = '';
   int nodeId = 0;
   String textFilter = '';
+
   List<String> get appNames => nodeConfigInfo.appNames;
 
   List<String> appNamesWithFilter(String filter) {
@@ -126,8 +127,6 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(items[index - 1]));
     });
   }
-
-
 
   void aboutOnTap() async {
     String version = "0.0.1";
@@ -244,13 +243,17 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void updateHomeInfo() {
     homeInfo(context).then((value) {
       nodeConfigInfo = value;
       setState(() {});
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    updateHomeInfo();
   }
 
   @override
@@ -312,7 +315,9 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: aboutOnTap, icon: const Icon(Icons.help_outline)),
           IconButton(
               onPressed: changeThemeMode,
-              icon: const Icon(Icons.sunny, color: Colors.white70))
+              icon: const Icon(Icons.sunny, color: Colors.white70)),
+          IconButton(
+              onPressed: updateHomeInfo, icon: const Icon(Icons.restart_alt,color: Colors.red))
         ],
       ),
       body: body,
