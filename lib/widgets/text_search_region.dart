@@ -117,7 +117,6 @@ class TextSearchRegionState extends State<TextSearchRegion> {
                   ? Colors.black
                   : Colors.white,
               fontSize: 48)));
-
   late final searchLoading = SizedBox(
     width: 50,
     child: UnconstrainedBox(
@@ -153,6 +152,88 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     return Wrap(children: result);
   }
 
+  Widget highlightText(String text) {
+    if (text == "") {
+      return SelectableText(
+        text,
+        style: TextStyle(
+            fontSize: fontSize.toDouble(),
+            // color: Colors.white,
+            height: 1.37),
+      );
+    }
+    final bool isDark = prefs.themeMode == ThemeMode.dark;
+
+    List<InlineSpan>? children = [];
+    String token = '[info]';
+    List<String> infos = text.split(token);
+    if (infos.length == 1) {
+      token = '[error]';
+      infos = text.split(token);
+    }
+
+    if (infos.length == 1) {
+      token = '[INFO]';
+      infos = text.split(token);
+    }
+    if (infos.length == 1) {
+      token = '[warn]';
+      infos = text.split(token);
+    }
+    if (infos.length == 1) {
+      token = '[warning]';
+      infos = text.split(token);
+    }
+    if (infos.length == 1) {
+      token = '[WARN]';
+      infos = text.split(token);
+    }
+
+    if (infos.length == 1) {
+      token = '[ERROR]';
+      infos = text.split(token);
+    }
+    if (infos.length == 1) {
+      token = '[debug]';
+      infos = text.split(token);
+    }
+    if (infos.length == 1) {
+      token = '[DEBUG]';
+      infos = text.split(token);
+    }
+
+    for (var i = 0; i < infos.length; i++) {
+      final info = infos[i];
+      children.add(TextSpan(
+          text: info,
+          style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontSize: fontSize.toDouble(),
+              fontWeight: FontWeight.normal)));
+      if (i != infos.length - 1) {
+        Color color;
+        if (token == '[error]' || token == '[ERROR]') {
+          color = Colors.red;
+        } else {
+          color = Colors.green;
+        }
+
+        children.add(TextSpan(
+            text: token,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: fontSize.toDouble(),
+            )));
+      }
+    }
+    final TextSpan textSpan = TextSpan(children: children);
+
+    return SelectableText.rich(textSpan);
+
+    ;
+  }
+
   @override
   Widget build(BuildContext context) {
     CupertinoSearchTextField textField = CupertinoSearchTextField(
@@ -176,82 +257,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       itemCount: searchResult.length,
       itemBuilder: (BuildContext context, int index) {
         final text = searchResult[index];
-        if (text != '') {
-          List<InlineSpan>? children = [];
-          String token = '[info]';
-          List<String> infos = text.split(token);
-          if (infos.length == 1) {
-            token = '[error]';
-            infos = text.split(token);
-          }
-
-          if (infos.length == 1) {
-            token = '[INFO]';
-            infos = text.split(token);
-          }
-          if (infos.length == 1) {
-            token = '[warn]';
-            infos = text.split(token);
-          }
-          if (infos.length == 1) {
-            token = '[warning]';
-            infos = text.split(token);
-          }
-          if (infos.length == 1) {
-            token = '[WARN]';
-            infos = text.split(token);
-          }
-
-          if (infos.length == 1) {
-            token = '[ERROR]';
-            infos = text.split(token);
-          }
-          if (infos.length == 1) {
-            token = '[debug]';
-            infos = text.split(token);
-          }
-          if (infos.length == 1) {
-            token = '[DEBUG]';
-            infos = text.split(token);
-          }
-
-          for (var i = 0; i < infos.length; i++) {
-            final info = infos[i];
-            children.add(TextSpan(
-                text: info,
-                style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: fontSize.toDouble(),
-                    fontWeight: FontWeight.normal)));
-            if (i != infos.length - 1) {
-              Color color;
-              if (token == '[error]' || token == '[ERROR]') {
-                color = Colors.red;
-              } else {
-                color = Colors.green;
-              }
-
-              children.add(TextSpan(
-                  text: token,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: fontSize.toDouble(),
-                  )));
-            }
-          }
-          final TextSpan textSpan = TextSpan(children: children);
-
-          return SelectableText.rich(textSpan);
-        }
-
-        return SelectableText(
-          text,
-          style: TextStyle(
-              fontSize: fontSize.toDouble(),
-              // color: Colors.white,
-              height: 1.37),
-        );
+        return highlightText(text);
       },
       separatorBuilder: (BuildContext context, int index) {
         return const Text("\n");
