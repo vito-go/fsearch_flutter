@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:html';
-import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fsearch_flutter/service/service.dart';
@@ -41,7 +39,7 @@ Future<StreamSubscription<dynamic>?> searchText({
   }
   eventSource.onError.listen((Event event) {
     myPrint(
-        "----========onError========----------  ${event.type}${event} ${event.path}");
+        "----========onError========----------  ${event.type} ${event.path}");
     eventSource.close();
     if (onClose != null) {
       onClose();

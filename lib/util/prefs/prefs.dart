@@ -10,7 +10,19 @@ Future<void> initGlobalPrefs() async {
 final prefs = _Prefs();
 
 class _Prefs {
-  String get _keyThemeMode => "myoption:themeMode";
+  String get _keyThemeMode => "fsearch:themeMode";
+
+  String get _keySelectFiles => "fsearch:_keySelectFiles";
+
+  List<String> getSelectFiles(String appName) {
+    final key = "$_keySelectFiles:$appName";
+    return _globalPrefs.getStringList(key)??[];
+  }
+
+  setSelectFiles(String appName, List<String> files) {
+    final key = "$_keySelectFiles:$appName";
+    return _globalPrefs.setStringList(key, files);
+  }
 
   ThemeMode get themeMode {
     final key = _keyThemeMode;

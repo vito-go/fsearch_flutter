@@ -101,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCheckMap["_"] = v ?? false;
               setState(() {});
             },
-            title: const Text("全选"));
+            title: const Text("Select All the Files"));
       }
       final fileName = items[index - 1];
 
@@ -202,6 +202,22 @@ class _MyHomePageState extends State<MyHomePage> {
             appName = name;
             nodeId = 0;
             fileCheckMap.clear();
+            final files = prefs.getSelectFiles(appName);
+            if (files.isNotEmpty){
+              for (var f in files) {
+                fileCheckMap[f] = true;
+              }
+              bool allSelected = true;
+              for (var f in allFiles) {
+                if (fileCheckMap[f] != true) {
+                  allSelected = false;
+                  break;
+                }
+              }
+              if (allSelected) {
+                fileCheckMap["_"] = true;
+              }
+            }
             setState(() {});
           }));
     }
@@ -317,7 +333,8 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: changeThemeMode,
               icon: const Icon(Icons.sunny, color: Colors.white70)),
           IconButton(
-              onPressed: updateHomeInfo, icon: const Icon(Icons.restart_alt,color: Colors.red))
+              onPressed: updateHomeInfo,
+              icon: const Icon(Icons.restart_alt, color: Colors.red))
         ],
       ),
       body: body,

@@ -31,7 +31,6 @@ class TextSearchRegion extends StatefulWidget {
 
 class TextSearchRegionState extends State<TextSearchRegion> {
   List<String> searchResult = [];
-
   final controller = TextEditingController(text: " ");
   StreamSubscription? subscription;
 
@@ -71,6 +70,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       scrollController.jumpTo(0);
     }
     await subscription?.cancel();
+    prefs.setSelectFiles(widget.appName, widget.files);
     subscription = await searchText(
         appName: widget.appName,
         searchPathSSE: widget.searchPathSSE,
@@ -152,6 +152,19 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     return Wrap(children: result);
   }
 
+  final List<String> tokens = [
+    '[info]',
+    '[INFO]',
+    '[error]',
+    '[ERROR]',
+    'warn',
+    '[WARN]',
+    'warning',
+    'WARNING',
+    '[debug]',
+    '[DEBUG]',
+  ];
+
   Widget highlightText(String text) {
     if (text == "") {
       return SelectableText(
@@ -163,45 +176,19 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       );
     }
     final bool isDark = prefs.themeMode == ThemeMode.dark;
-
     List<InlineSpan>? children = [];
-    String token = '[info]';
-    List<String> infos = text.split(token);
-    if (infos.length == 1) {
-      token = '[error]';
-      infos = text.split(token);
+    String token = '';
+    List<String> infos = [];
+    for (var i = 0; i < tokens.length; i++) {
+      if (text.contains(tokens[i])) {
+        token = tokens[i];
+        infos = text.split(token);
+        break;
+      }
     }
-
-    if (infos.length == 1) {
-      token = '[INFO]';
-      infos = text.split(token);
+    if (infos.isEmpty) {
+      infos = [text];
     }
-    if (infos.length == 1) {
-      token = '[warn]';
-      infos = text.split(token);
-    }
-    if (infos.length == 1) {
-      token = '[warning]';
-      infos = text.split(token);
-    }
-    if (infos.length == 1) {
-      token = '[WARN]';
-      infos = text.split(token);
-    }
-
-    if (infos.length == 1) {
-      token = '[ERROR]';
-      infos = text.split(token);
-    }
-    if (infos.length == 1) {
-      token = '[debug]';
-      infos = text.split(token);
-    }
-    if (infos.length == 1) {
-      token = '[DEBUG]';
-      infos = text.split(token);
-    }
-
     for (var i = 0; i < infos.length; i++) {
       final info = infos[i];
       children.add(TextSpan(
@@ -211,13 +198,17 @@ class TextSearchRegionState extends State<TextSearchRegion> {
               fontSize: fontSize.toDouble(),
               fontWeight: FontWeight.normal)));
       if (i != infos.length - 1) {
-        Color color;
-        if (token == '[error]' || token == '[ERROR]') {
-          color = Colors.red;
-        } else {
+        Color color = Colors.green;
+        if (token == "[info]" || token == '[INFO]') {
           color = Colors.green;
+        } else if (token == '[error]' || token == '[ERROR]') {
+          color = Colors.red;
+        } else if (token == '[warn]' ||
+            token == '[WARN]' ||
+            token == '[warning]' ||
+            token == '[WARNING]') {
+          color = Colors.yellow;
         }
-
         children.add(TextSpan(
             text: token,
             style: TextStyle(
@@ -228,10 +219,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       }
     }
     final TextSpan textSpan = TextSpan(children: children);
-
     return SelectableText.rich(textSpan);
-
-    ;
   }
 
   @override
@@ -283,7 +271,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
             fontSize = value.toInt();
           });
         });
-    IconButton buttonResetFontSize = IconButton(
+    final IconButton buttonResetFontSize = IconButton(
         onPressed: () {
           setState(() {
             subscription?.cancel();
