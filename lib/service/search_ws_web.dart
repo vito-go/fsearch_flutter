@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fsearch_flutter/service/service.dart';
@@ -7,14 +8,12 @@ import 'package:fsearch_flutter/service/types.dart';
 
 import '../util/util.dart';
 
-Future<StreamSubscription<dynamic>?> searchText({
+Future<String> searchTextHTTP({
   required String appName,
-  required String searchPathSSE,
+  required String searchPathHTTP,
   required int nodeId,
   required List<String> files,
   required List<String> kw,
-  required void Function(String data) onData,
-  void Function()? onClose,
 }) async {
   final params = <String, dynamic>{
     'appName': appName,
@@ -23,38 +22,24 @@ Future<StreamSubscription<dynamic>?> searchText({
     'kw': kw,
     'dataType': 'text',
   };
-  final path = searchPathSSE;
+  final path = searchPathHTTP;
   final query = Uri(queryParameters: params).query;
   String url = "$path?$query";
   if (kDebugMode) {
     url = 'http://127.0.0.1:9097$url';
   }
-  myPrint("url is : $url");
-  EventSource eventSource;
-  try {
-    eventSource = EventSource(url);
-  } catch (e) {
-    myPrint("-------- $e");
-    return null;
+  print("search: $url");
+  final dio = Dio();
+  final Response<String> response = await dio.get(url,
+      options: Options(
+        responseType: ResponseType.plain,
+      ),
+      queryParameters: params);
+  if (response.statusCode != 200) {
+    return "http statusCode not ok: $response.statusCode";
   }
-  eventSource.onError.listen((Event event) {
-    myPrint(
-        "----========onError========----------  ${event.type} ${event.path}");
-    eventSource.close();
-    if (onClose != null) {
-      onClose();
-    }
-  });
-  eventSource.onOpen.listen((Event event) {
-    myPrint("----========open========----------  ${event.type} ${event.path}");
-  });
-  final listener = eventSource.onMessage.listen((MessageEvent event) {
-    onData(event.data);
-  }, onError: (e) {
-    myPrint("-------->>> $e");
-  }, cancelOnError: true);
+  return response.data ?? "";
   // window.alert("SSE链接成功");
-  return listener;
 }
 
 Future<NodeConfigInfo> homeInfo(BuildContext context) async {
@@ -97,3 +82,4 @@ void saveContent(String content, String fileName) {
   downLink.click();
   downLink.remove();
 }
+

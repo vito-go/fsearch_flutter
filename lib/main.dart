@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fsearch_flutter/service/search_ws_no_web.dart'
-    if (dart.library.html) 'package:fsearch_flutter/service/search_ws_web.dart';
+import 'package:fsearch_flutter/service/search_ws_web.dart';
 
 import 'package:fsearch_flutter/service/types.dart';
 import 'package:fsearch_flutter/util/github_logo.dart';
@@ -203,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
             nodeId = 0;
             fileCheckMap.clear();
             final files = prefs.getSelectFiles(appName);
-            if (files.isNotEmpty){
+            if (files.isNotEmpty) {
               for (var f in files) {
                 fileCheckMap[f] = true;
               }
@@ -279,7 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appName: appName,
       nodeId: nodeId,
       files: fileChecked,
-      searchPathSSE: nodeConfigInfo.searchPathSSE,
+      searchPathHTTP: nodeConfigInfo.searchPathHTTP,
     );
     final Widget body = Row(
       mainAxisSize: MainAxisSize.min,

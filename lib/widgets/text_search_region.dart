@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:fsearch_flutter/service/search_ws_no_web.dart'
-    if (dart.library.html) 'package:fsearch_flutter/service/search_ws_web.dart';
+import 'package:fsearch_flutter/service/search_ws_web.dart';
 
 import 'package:fsearch_flutter/util/util.dart';
 
@@ -14,12 +13,12 @@ class TextSearchRegion extends StatefulWidget {
   const TextSearchRegion(
       {super.key,
       required this.appName,
-      required this.searchPathSSE,
+      required this.searchPathHTTP,
       required this.nodeId,
       required this.files});
 
   final String appName;
-  final String searchPathSSE;
+  final String searchPathHTTP;
   final int nodeId;
   final List<String> files;
 
@@ -31,14 +30,32 @@ class TextSearchRegion extends StatefulWidget {
 
 class TextSearchRegionState extends State<TextSearchRegion> {
   List<String> searchResult = [];
-  final controller = TextEditingController(text: " ");
-  StreamSubscription? subscription;
+  final TextEditingController controller = TextEditingController(text: " ");
+
+  ScrollController scrollController = ScrollController();
+  bool searchDone = false;
+  bool loading = false;
+  final FocusNode focusNode = FocusNode();
+  int fontSize = 18;
+  Widget noResult = Center(
+      child: SelectableText("no result",
+          style: TextStyle(
+              color: prefs.themeMode == ThemeMode.light
+                  ? Colors.black
+                  : Colors.white,
+              fontSize: 48)));
+
+  @override
+  void dispose() {
+    super.dispose();
+    myPrint("dispose search");
+    scrollController.dispose();
+    controller.dispose();
+  }
 
   Future<void> _search() async {
     if (loading) {
-      setState(() {
-        loading = false;
-      });
+      return;
     }
     if (widget.appName == "") {
       myToast(context, "please select a app");
@@ -59,64 +76,27 @@ class TextSearchRegionState extends State<TextSearchRegion> {
           context, "Please select at least one file when not selecting a host");
       return;
     }
-    myPrint("search start");
-
     setState(() {
       searchResult.clear();
       searchDone = false;
       loading = true;
     });
-    if (searchResult.isNotEmpty) {
-      scrollController.jumpTo(0);
-    }
-    await subscription?.cancel();
     prefs.setSelectFiles(widget.appName, widget.files);
-    subscription = await searchText(
+    final result = await searchTextHTTP(
         appName: widget.appName,
-        searchPathSSE: widget.searchPathSSE,
+        searchPathHTTP: widget.searchPathHTTP,
         nodeId: widget.nodeId,
         kw: kw,
-        files: widget.files,
-        onData: (data) {
-          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-            setState(() {
-              searchResult.add(data);
-            });
-          });
-        },
-        onClose: () {
-          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-            myPrint("search close");
-            setState(() {
-              searchDone = true;
-              loading = false;
-            });
-          });
-        });
+        files: widget.files);
+    setState(() {
+      searchDone = true;
+      loading = false;
+      if (result != "") {
+        searchResult = result.split("\n");
+      }
+    });
   }
 
-  ScrollController scrollController = ScrollController();
-  bool searchDone = false;
-  bool loading = false;
-
-  @override
-  void dispose() {
-    super.dispose();
-    myPrint("dispose search");
-    scrollController.dispose();
-    controller.dispose();
-    subscription?.cancel();
-  }
-
-  FocusNode focusNode = FocusNode();
-  int fontSize = 18;
-  Widget noResult = Center(
-      child: SelectableText("no result",
-          style: TextStyle(
-              color: prefs.themeMode == ThemeMode.light
-                  ? Colors.black
-                  : Colors.white,
-              fontSize: 48)));
   late final searchLoading = SizedBox(
     width: 50,
     child: UnconstrainedBox(
@@ -222,6 +202,28 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     return SelectableText.rich(textSpan);
   }
 
+  void reset() {
+    loading = false;
+    fontSize = 18;
+    searchDone = false;
+    searchResult = [];
+    focusNode.unfocus();
+    setState(() {});
+  }
+
+  Slider get slider => Slider(
+      focusNode: focusNode,
+      value: fontSize.toDouble(),
+      min: 12,
+      max: 32,
+      divisions: 20,
+      label: "$fontSize",
+      onChanged: (double value) {
+        setState(() {
+          fontSize = value.toInt();
+        });
+      });
+
   @override
   Widget build(BuildContext context) {
     CupertinoSearchTextField textField = CupertinoSearchTextField(
@@ -248,41 +250,20 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         return highlightText(text);
       },
       separatorBuilder: (BuildContext context, int index) {
-        return const Text("\n");
+        return const Text("");
       },
     );
     // Widget view = SingleChildScrollView(
     //   child: widgetWrapResult(),
     // );
     Widget myButtonSearch = ElevatedButton.icon(
-        onPressed: _search,
+        onPressed: loading ? null : _search,
         icon: const Icon(Icons.search),
         label:
             SizedBox(width: 50, child: loading ? searchLoading : sizeBoxText));
-    final Slider slider = Slider(
-        focusNode: focusNode,
-        value: fontSize.toDouble(),
-        min: 12,
-        max: 32,
-        divisions: 20,
-        label: "$fontSize",
-        onChanged: (double value) {
-          setState(() {
-            fontSize = value.toInt();
-          });
-        });
-    final IconButton buttonResetFontSize = IconButton(
-        onPressed: () {
-          setState(() {
-            subscription?.cancel();
-            loading = false;
-            fontSize = 18;
-            searchDone = false;
-            searchResult = [];
-            focusNode.unfocus();
-          });
-        },
-        icon: const Icon(Icons.refresh));
+
+    final IconButton buttonResetFontSize =
+        IconButton(onPressed: reset, icon: const Icon(Icons.refresh));
     final AppBar appBar = AppBar(
       title: textField,
       leadingWidth: 0,
@@ -311,8 +292,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         const SizedBox(width: 10),
       ],
     );
-    // final body =
-    //     (searchResult.isEmpty && controller.text != "") ? noResult : view;
+
     final body = (searchResult.isEmpty && searchDone) ? noResult : view;
     return Scaffold(
       body: Padding(padding: const EdgeInsets.all(10), child: body),
