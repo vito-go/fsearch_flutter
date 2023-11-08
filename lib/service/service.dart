@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 
-import '../util/util.dart';
-
 class RespData<T> {
   int code = 0;
   String message = "";

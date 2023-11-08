@@ -129,11 +129,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void aboutOnTap() async {
     String version = "0.0.1";
-    String applicationName = "File Search";
+    const applicationName = "File Search";
     if (context.mounted) {
       showAboutDialog(
         context: context,
-        applicationName: "File Search",
+        applicationName: applicationName,
         applicationIcon: InkWell(
           child: const FlutterLogo(),
           onTap: () async {},

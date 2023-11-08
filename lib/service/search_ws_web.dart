@@ -22,24 +22,19 @@ Future<String> searchTextHTTP({
     'kw': kw,
     'dataType': 'text',
   };
-  final path = searchPathHTTP;
-  final query = Uri(queryParameters: params).query;
-  String url = "$path?$query";
+  String url = searchPathHTTP;
   if (kDebugMode) {
     url = 'http://127.0.0.1:9097$url';
   }
   print("search: $url");
   final dio = Dio();
   final Response<String> response = await dio.get(url,
-      options: Options(
-        responseType: ResponseType.plain,
-      ),
+      options: Options(responseType: ResponseType.plain),
       queryParameters: params);
   if (response.statusCode != 200) {
     return "http statusCode not ok: $response.statusCode";
   }
   return response.data ?? "";
-  // window.alert("SSE链接成功");
 }
 
 Future<NodeConfigInfo> homeInfo(BuildContext context) async {
@@ -82,4 +77,3 @@ void saveContent(String content, String fileName) {
   downLink.click();
   downLink.remove();
 }
-
