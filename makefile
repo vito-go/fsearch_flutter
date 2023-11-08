@@ -1,4 +1,4 @@
 build-web:
-	flutter build web--web-renderer html
+	flutter build web --web-renderer html
 	- mkdir bin/
-	zip -r ./bin/web.zip ./build/web/
+	cd build && zip -r ../bin/web.zip web/

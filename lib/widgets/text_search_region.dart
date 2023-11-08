@@ -137,23 +137,18 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     '[INFO]',
     '[error]',
     '[ERROR]',
-    'warn',
-    '[WARN]',
     'warning',
     'WARNING',
+    'warn',
+    '[WARN]',
     '[debug]',
     '[DEBUG]',
   ];
 
   Widget highlightText(String text) {
     if (text == "") {
-      return SelectableText(
-        text,
-        style: TextStyle(
-            fontSize: fontSize.toDouble(),
-            // color: Colors.white,
-            height: 1.37),
-      );
+      print("empty text");
+      return const Text("");
     }
     final bool isDark = prefs.themeMode == ThemeMode.dark;
     List<InlineSpan>? children = [];
@@ -198,6 +193,10 @@ class TextSearchRegionState extends State<TextSearchRegion> {
             )));
       }
     }
+    children.add(const TextSpan(
+        text: "\n",
+        style: TextStyle(
+            fontWeight: FontWeight.normal)));
     final TextSpan textSpan = TextSpan(children: children);
     return SelectableText.rich(textSpan);
   }
@@ -242,16 +241,16 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         placeholder:
             "Please enter the keywords, separate multiple keywords with semicolons (;)");
     final bool isDark = prefs.themeMode == ThemeMode.dark;
-    ListView view = ListView.separated(
+    ListView view = ListView.builder(
       controller: scrollController,
       itemCount: searchResult.length,
       itemBuilder: (BuildContext context, int index) {
         final text = searchResult[index];
         return highlightText(text);
       },
-      separatorBuilder: (BuildContext context, int index) {
-        return const Text("");
-      },
+      // separatorBuilder: (BuildContext context, int index) {
+      //   return const Text("");
+      // },
     );
     // Widget view = SingleChildScrollView(
     //   child: widgetWrapResult(),
