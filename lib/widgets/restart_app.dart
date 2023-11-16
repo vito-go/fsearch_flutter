@@ -22,11 +22,6 @@ class RestartAppState extends State<RestartApp> {
     setState(() {
       key = UniqueKey();
     });
-    // SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-    //   setState(() {
-    //     key = UniqueKey();
-    //   });
-    // });
   }
 
   @override
