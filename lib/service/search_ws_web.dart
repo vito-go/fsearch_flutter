@@ -29,7 +29,11 @@ Future<String> searchTextHTTP({
   print("search: $url");
   final dio = Dio();
   final Response<String> response = await dio.get(url,
-      options: Options(responseType: ResponseType.plain),
+      options: Options(
+          responseType: ResponseType.plain,
+          validateStatus: (int? status) {
+            return true;
+          }),
       queryParameters: params);
   if (response.statusCode != 200) {
     return "http statusCode not ok: $response.statusCode";

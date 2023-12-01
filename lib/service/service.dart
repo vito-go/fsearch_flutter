@@ -34,25 +34,26 @@ class RespData<T> {
 }
 
 Future<RespData<T>> dioTryGet<T>(
-    BuildContext? context,
-    String www, {
-      Map<String, dynamic>? queryParameters,
-      required T Function(Map<String, dynamic> json) fromJson,
-      Duration sendTimeout = const Duration(seconds: 3),
-      Duration receiveTimeout = const Duration(seconds: 5),
-      Map<String, dynamic>? header,
-    }) async {
+  BuildContext? context,
+  String www, {
+  Map<String, dynamic>? queryParameters,
+  required T Function(Map<String, dynamic> json) fromJson,
+  Duration sendTimeout = const Duration(seconds: 3),
+  Duration receiveTimeout = const Duration(seconds: 5),
+  Map<String, dynamic>? header,
+}) async {
   final dio = Dio();
   try {
-    Response<String> respBody =
-    await dio.get<String>(
+    Response<String> respBody = await dio.get<String>(
       www,
       options: Options(
-        headers: header,
-        sendTimeout: sendTimeout,
-        receiveTimeout: receiveTimeout,
-        responseType: ResponseType.plain,
-      ), // set responseType to `stream`
+          headers: header,
+          sendTimeout: sendTimeout,
+          receiveTimeout: receiveTimeout,
+          responseType: ResponseType.plain,
+          validateStatus: (_) {
+            return true;
+          }), // set responseType to `stream`
       queryParameters: queryParameters,
     );
     if (respBody.statusCode != 200) {
@@ -62,7 +63,7 @@ Future<RespData<T>> dioTryGet<T>(
     if (respData == null) return RespData(code: -1);
     return RespData.fromJson(jsonDecode(respData), fromJson);
   } catch (e) {
-    return RespData(code: -1,message: "$e");
+    return RespData(code: -1, message: "$e");
   } finally {
     dio.close(force: true);
   }
