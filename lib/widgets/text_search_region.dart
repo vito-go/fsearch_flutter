@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fsearch/service/search_ws_web.dart';
+import 'package:fsearch/util/util.dart';
 
-import 'package:fsearch_flutter/service/search_ws_web.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:webview_flutter_web/webview_flutter_web.dart';
 
-import 'package:fsearch_flutter/util/util.dart';
-
-import '../util/prefs/prefs.dart';
+import '../common/prefs/prefs.dart';
+import '../common/queue.dart';
 
 class TextSearchRegion extends StatefulWidget {
   const TextSearchRegion(
@@ -29,73 +31,93 @@ class TextSearchRegion extends StatefulWidget {
 }
 
 class TextSearchRegionState extends State<TextSearchRegion> {
-  List<String> searchResult = [];
-  final TextEditingController controller = TextEditingController(text: " ");
+  final TextEditingController controller = TextEditingController(text: "");
   final placeHolder =
       "Please enter the keywords, separate multiple keywords with semicolons ;";
   ScrollController scrollController = ScrollController();
-  bool searchDone = false;
   bool loading = false;
   final FocusNode focusNode = FocusNode();
-  int fontSize = 18;
-  Widget noResult = Center(
-      child: SelectableText("no result",
-          style: TextStyle(
-              color: prefs.themeMode == ThemeMode.light
-                  ? Colors.black
-                  : Colors.white,
-              fontSize: 48)));
+  String searchHTML = "";
+
+  String get normalColor => isDark ? "#ffffff" : "#000000";
+
+  String buildHTML() {
+    return '<div id="container" style="font-size: ${prefs.searchHTMLFontSize}px; color: $normalColor; overflow-x: ${prefs.searchHTMLOverflowX};">$searchHTML</div>';
+  }
 
   @override
   void dispose() {
     super.dispose();
-    myPrint("dispose search");
+    myPrint("dispose TextSearchRegionState");
     scrollController.dispose();
     controller.dispose();
+    eventConsumer?.cancel();
   }
 
-  Future<void> _search() async {
-    if (loading) {
+  void search() async {
+    final result = await getSearchResultHTML(dataType: 'html');
+    if (result == null) return;
+    if (result == "") {
+      // center h1 no result
+      searchHTML = "<h1>No result</h1>";
+      controllerW.loadHtmlString(buildHTML());
       return;
     }
-    if (widget.appName == "") {
-      myToast(context, "please select a app");
-      return;
+    if (result != "") {
+      searchHTML = result;
+      controllerW.loadHtmlString(buildHTML());
     }
+  }
+
+  List<String> get kw {
     final text = controller.text.trim();
-    if (text == "") {
-      myToast(context, "please enter the keywords");
-      return;
-    }
     List<String> kw = [];
     final splits = text.split(";");
     for (var ele in splits) {
       kw.add(ele.trim());
     }
+    return kw;
+  }
+
+  Future<String?> getSearchResultHTML(
+      {required String dataType, bool needLoading = true}) async {
+    hiddenWebView = false;
+    if (loading) {
+      myToast(context, "Please wait for the current search to complete");
+      return null;
+    }
+    if (widget.appName == "") {
+      myToast(context, "Please select a app");
+      return null;
+    }
     if (widget.nodeId == 0 && widget.files.isEmpty) {
       myToast(
           context, "Please select at least one file when not selecting a host");
-      return;
+      return "";
     }
-    setState(() {
-      searchResult.clear();
-      searchDone = false;
-      loading = true;
-    });
+    if (needLoading) {
+      setState(() {
+        loading = true;
+      });
+    }
     prefs.setSelectFiles(widget.appName, widget.files);
     final result = await searchTextHTTP(
-        appName: widget.appName,
-        searchPathHTTP: widget.searchPathHTTP,
-        nodeId: widget.nodeId,
-        kw: kw,
-        files: widget.files);
-    setState(() {
-      searchDone = true;
-      loading = false;
-      if (result != "") {
-        searchResult = result.split("\n");
-      }
-    });
+      appName: widget.appName,
+      searchPathHTTP: widget.searchPathHTTP,
+      nodeId: widget.nodeId,
+      kw: kw,
+      files: widget.files,
+      dataType: dataType,
+      fontSize: prefs.searchHTMLFontSize,
+      normalColor: normalColor,
+      overflowX: prefs.searchHTMLOverflowX,
+    );
+    if (needLoading) {
+      setState(() {
+        loading = false;
+      });
+    }
+    return result.trim();
   }
 
   late final searchLoading = SizedBox(
@@ -118,108 +140,87 @@ class TextSearchRegionState extends State<TextSearchRegion> {
     width: 50,
     child: UnconstrainedBox(child: Text("Search")),
   );
+  final controllerW = PlatformWebViewController(
+    const PlatformWebViewControllerCreationParams(),
+  );
 
-  Widget widgetWrapResult() {
-    List<Widget> result = [];
-    for (var e in searchResult) {
-      result.add(SelectableText(
-        e,
-        style: TextStyle(
-            fontSize: fontSize.toDouble(),
-            // color: Colors.white,
-            height: 1.37),
-      ));
+  void eventHandler(Event event) {
+    if (event.eventType == EventType.updateTheme) {
+      controllerW.loadHtmlString(buildHTML());
     }
-    return Wrap(children: result);
   }
 
-  final List<String> tokens = [
-    '[info]',
-    '[INFO]',
-    '[error]',
-    '[ERROR]',
-    'warning',
-    'WARNING',
-    'warn',
-    '[WARN]',
-    '[debug]',
-    '[DEBUG]',
-  ];
-
-  Widget highlightText(String text) {
-    if (text == "") {
-      return const Text("");
-    }
-    final bool isDark = prefs.themeMode == ThemeMode.dark;
-    List<InlineSpan>? children = [];
-    String token = '';
-    List<String> infos = [];
-    for (var i = 0; i < tokens.length; i++) {
-      if (text.contains(tokens[i])) {
-        token = tokens[i];
-        infos = text.split(token);
-        break;
-      }
-    }
-    if (infos.isEmpty) {
-      infos = [text];
-    }
-    for (var i = 0; i < infos.length; i++) {
-      final info = infos[i];
-      children.add(TextSpan(
-          text: info,
-          style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontSize: fontSize.toDouble(),
-              fontWeight: FontWeight.normal)));
-      if (i != infos.length - 1) {
-        Color color = Colors.green;
-        if (token == "[info]" || token == '[INFO]') {
-          color = Colors.green;
-        } else if (token == '[error]' || token == '[ERROR]') {
-          color = Colors.red;
-        } else if (token == '[warn]' ||
-            token == '[WARN]' ||
-            token == '[warning]' ||
-            token == '[WARNING]') {
-          color = Colors.yellow;
-        }
-        children.add(TextSpan(
-            text: token,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize.toDouble(),
-            )));
-      }
-    }
-    children.add(const TextSpan(
-        text: "\n", style: TextStyle(fontWeight: FontWeight.normal)));
-    final TextSpan textSpan = TextSpan(children: children);
-    return SelectableText.rich(textSpan);
+  @override
+  void initState() {
+    super.initState();
+    eventConsumer = consume(eventHandler);
+    WebViewPlatform.instance ??= WebWebViewPlatform();
   }
+
+  StreamSubscription<Event>? eventConsumer;
 
   void reset() {
     loading = false;
-    fontSize = 18;
-    searchDone = false;
-    searchResult = [];
-    focusNode.unfocus();
+    searchHTML = "";
+    controllerW.loadHtmlString("");
     setState(() {});
   }
 
   Slider get slider => Slider(
       focusNode: focusNode,
-      value: fontSize.toDouble(),
+      value: prefs.searchHTMLFontSize.toDouble(),
       min: 12,
-      max: 32,
-      divisions: 20,
-      label: "$fontSize",
+      max: 42,
+      divisions: 30,
+      label: "${prefs.searchHTMLFontSize}",
       onChanged: (double value) {
+        prefs.searchHTMLFontSize = value.toInt();
+        controllerW.loadHtmlString(buildHTML());
         setState(() {
-          fontSize = value.toInt();
+          // id: container
         });
       });
+
+  get isDark => prefs.themeMode == ThemeMode.dark;
+  final overflowXList = ['auto', 'hidden', 'visible', 'scroll'];
+  bool hiddenWebView = false;
+
+  Widget get dropButtonOverflowX => DropdownButton<String>(
+        value: prefs.searchHTMLOverflowX,
+        onChanged: (String? newValue) {
+          myPrint("newValue: $newValue");
+          prefs.searchHTMLOverflowX = newValue ?? "auto";
+          hiddenWebView = false;
+          setState(() {});
+          controllerW.loadHtmlString(buildHTML());
+        },
+
+        onTap: () {
+          setState(() {
+            hiddenWebView = true;
+          });
+        },
+        // isExpanded: true,
+        items: overflowXList.map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+      );
+
+  void downloadLog() async {
+    final content =
+        await getSearchResultHTML(dataType: 'text', needLoading: false);
+    if (content == null) {
+      return;
+    }
+    if (content == "") {
+      myToast(context, "No result");
+      return;
+    }
+    saveContent(content, "fsearch.log");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,65 +234,60 @@ class TextSearchRegionState extends State<TextSearchRegion> {
                 : Colors.white),
         onSuffixTap: () {
           controller.text = " ";
-          setState(() {
-            searchResult.clear();
-            searchDone = false;
-          });
         },
         placeholder: placeHolder);
     final bool isDark = prefs.themeMode == ThemeMode.dark;
-    ListView view = ListView.builder(
-      controller: scrollController,
-      itemCount: searchResult.length,
-      itemBuilder: (BuildContext context, int index) {
-        final text = searchResult[index];
-        return highlightText(text);
-      },
-      // separatorBuilder: (BuildContext context, int index) {
-      //   return const Text("");
-      // },
-    );
     Widget myButtonSearch = ElevatedButton.icon(
-        onPressed: loading ? null : _search,
+        onPressed: loading ? null : search,
         icon: const Icon(Icons.search),
         label:
             SizedBox(width: 50, child: loading ? searchLoading : sizeBoxText));
 
-    final IconButton buttonResetFontSize =
-        IconButton(onPressed: reset, icon: const Icon(Icons.refresh));
-    final AppBar appBar = AppBar(
-      title: textField,
-      leadingWidth: 0,
-      leading: null,
-      toolbarHeight: kMinInteractiveDimension,
-      actions: [
+    final webView = loading
+        ? const Center(child: CircularProgressIndicator())
+        : PlatformWebViewWidget(
+            PlatformWebViewWidgetCreationParams(controller: controllerW),
+          ).build(context);
+    final row = Row(
+      children: [
+        Flexible(child: textField),
+        const SizedBox(width: 10),
+
         myButtonSearch,
         const SizedBox(width: 20),
-        buttonResetFontSize,
+        const Align(
+          alignment: AlignmentDirectional.center,
+          child: Text("overflow-x: "),
+        ),
+        // overflow-x DropdownMenu
+        dropButtonOverflowX,
         slider,
         Align(
           alignment: AlignmentDirectional.center,
-          child: Text("$fontSize"),
+          child: Text("${prefs.searchHTMLFontSize}"),
         ),
-        const SizedBox(width: 5),
         IconButton(
             onPressed: () {
-              if (searchResult.isEmpty) {
-                myToast(context, "no result");
-                return;
-              }
-              saveContent(searchResult.join('\n'), "fsearch.log");
+              prefs.searchHTMLFontSize = 18;
+              setState(() {});
+              controllerW.loadHtmlString(buildHTML());
             },
+            icon: const Icon(Icons.refresh)),
+        const SizedBox(width: 10),
+        IconButton(onPressed: reset, icon: const Icon(Icons.clear_all)),
+        IconButton(
+            onPressed: downloadLog,
             icon: Icon(Icons.save_alt,
                 color: isDark ? Colors.white70 : Colors.black)),
-        const SizedBox(width: 10),
+        const SizedBox(width: 20),
       ],
     );
 
-    final body = (searchResult.isEmpty && searchDone) ? noResult : view;
-    return Scaffold(
-      body: Padding(padding: const EdgeInsets.all(10), child: body),
-      appBar: appBar,
+    return Column(
+      children: [
+        row,
+        Expanded(child: hiddenWebView ? const Text("") : webView),
+      ],
     );
   }
 }

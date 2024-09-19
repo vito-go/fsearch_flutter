@@ -46,3 +46,6 @@ myPrint(dynamic msg,
     print("[$level] ${DateTime.now()} $traceString $msg $arg");
   }
 }
+void unfocus(){
+  FocusManager.instance.primaryFocus?.unfocus();
+}

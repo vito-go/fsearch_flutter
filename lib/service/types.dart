@@ -35,7 +35,6 @@ class NodeInfo {
 class NodeConfigInfo {
   List<ClusterNode> clusterNodes = [];
   String searchPathHTTP = "";
-  String searchPathSSE = "";
 
   NodeConfigInfo();
 
@@ -91,6 +90,5 @@ class NodeConfigInfo {
       clusterNodes.add(ClusterNode.fromJson(ele));
     }
     searchPathHTTP = json['searchPathHTTP'] ?? '';
-    searchPathSSE = json['searchPathSSE'] ?? '';
   }
 }

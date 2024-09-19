@@ -1,6 +1,6 @@
 {
-    "name": "fsearch_flutter",
-    "short_name": "fsearch_flutter",
+    "name": "fsearch",
+    "short_name": "fsearch",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

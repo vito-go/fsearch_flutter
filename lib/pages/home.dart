@@ -1,27 +1,40 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fsearch_flutter/service/search_ws_web.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:fsearch/service/search_ws_web.dart';
 
-import 'package:fsearch_flutter/service/types.dart';
-import 'package:fsearch_flutter/util/github_logo.dart';
-import 'package:fsearch_flutter/util/prefs/prefs.dart';
+import 'package:fsearch/service/types.dart';
 
-import 'package:fsearch_flutter/widgets/restart_app.dart';
-import 'package:fsearch_flutter/widgets/text_search_region.dart';
+
+import 'package:fsearch/widgets/text_search_region.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+import '../common/prefs/prefs.dart';
+import '../common/queue.dart';
+import '../util/util.dart';
+
+class Home extends StatefulWidget {
+  const Home({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<Home> createState() => _HomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _HomeState extends State<Home> {
   NodeConfigInfo nodeConfigInfo = NodeConfigInfo();
   String appName = '';
   int nodeId = 0;
   String textFilter = '';
+  String githubSVGContent = '';
+
+  void eventHandler(Event event) {
+    if (event.eventType == EventType.updateTheme) {
+      setState(() {});
+    }
+  }
 
   List<String> get appNames => nodeConfigInfo.appNames;
 
@@ -65,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCheckMap["_"] = v ?? false;
               setState(() {});
             },
-            title: const Text("Select All the Files"));
+            title:   const Text("Select All the Files",style: TextStyle(fontWeight: FontWeight.bold),));
       }
       final fileName = items[index - 1];
 
@@ -125,11 +138,11 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case ThemeMode.light:
         prefs.themeMode = ThemeMode.dark;
-        RestartApp.restart(context);
+        produceEvent(EventType.updateTheme, ThemeMode.dark);
         break;
       case ThemeMode.dark:
         prefs.themeMode = ThemeMode.light;
-        RestartApp.restart(context);
+        produceEvent(EventType.updateTheme, ThemeMode.light);
         break;
     }
   }
@@ -228,19 +241,35 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     super.dispose();
+    eventConsumer?.cancel();
   }
 
-  void updateHomeInfo() {
-    homeInfo(context).then((value) {
-      nodeConfigInfo = value;
-      setState(() {});
-    });
+  void updateHomeInfo() async {
+    final value = await homeInfo(context);
+    nodeConfigInfo = value;
+    setState(() {});
+  }
+
+  StreamSubscription<Event>? eventConsumer;
+
+  void updateGitHubSVGContent() async {
+    final bool isDark = prefs.themeMode == ThemeMode.dark;
+    if (isDark) {
+      githubSVGContent =
+          await rootBundle.loadString("assets/images/github-dark.svg");
+    } else {
+      githubSVGContent =
+          await rootBundle.loadString("assets/images/github-dark.svg");
+    }
+    setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
     updateHomeInfo();
+    updateGitHubSVGContent();
+    eventConsumer = consume(eventHandler);
   }
 
   @override
@@ -256,7 +285,7 @@ class _MyHomePageState extends State<MyHomePage> {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Flexible(
+         Flexible(
           flex: 10,
           child: buildRadioAppNames(),
         ),
@@ -284,27 +313,30 @@ class _MyHomePageState extends State<MyHomePage> {
         Expanded(flex: 50, child: right),
       ],
     );
+    final sunIcon=prefs.themeMode == ThemeMode.light?Icons.nightlight_round:Icons.sunny;
 
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: kMinInteractiveDimension,
-        backgroundColor: prefs.themeMode == ThemeMode.light
-            ? Theme.of(context).colorScheme.inversePrimary
-            : null,
-        title: const Text('File Search'),
+        title: const Text('File Search', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
               onPressed: () {
                 launchUrl(Uri.parse("https://github.com/vito-go/fsearch"));
               },
-              icon: githubSVG),
+              icon: githubSVGContent == ""
+                  ? const Icon(Icons.link)
+                  : SvgPicture.string(githubSVGContent)),
           IconButton(
-              onPressed: aboutOnTap, icon: const Icon(Icons.help_outline)),
+              onPressed: aboutOnTap,
+              icon: const Icon(Icons.help_outline, color: Colors.white)),
           IconButton(
               onPressed: changeThemeMode,
-              icon: const Icon(Icons.sunny, color: Colors.white70)),
+              icon:   Icon(sunIcon, color: Colors.white)),
           IconButton(
-              onPressed: updateHomeInfo, icon: const Icon(Icons.refresh)),
+              onPressed: updateHomeInfo,
+              icon: const Icon(Icons.refresh, color: Colors.white)),
+          const SizedBox(width: 20),
         ],
       ),
       body: body,
