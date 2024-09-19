@@ -1,4 +1,4 @@
-# fsearch_flutter
+# fsearch
 
 Search text in files quickly(using linux grep command), especially for log searching. Directories are supported.
 Support local remote online registration search.

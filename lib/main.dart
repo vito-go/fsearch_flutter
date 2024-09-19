@@ -1,40 +1,89 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+import 'dart:html' as html;
+
 import 'package:flutter/material.dart';
-import 'package:fsearch_flutter/pages/home.dart';
-import 'package:fsearch_flutter/util/global.dart';
-import 'package:fsearch_flutter/util/prefs/prefs.dart';
+import 'package:fsearch/pages/home.dart';
+import 'package:fsearch/util/util.dart';
 
-import 'package:fsearch_flutter/widgets/restart_app.dart';
+import 'common/prefs/prefs.dart';
+import 'common/queue.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Global.init().then((value) {
-    runApp(const RestartApp(
-      child: MyApp(),
-    ));
-  });
+  await initGlobalPrefs();
+  runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<StatefulWidget> createState() {
+    return MyAppState();
+  }
+}
+
+class MyAppState extends State<MyApp> {
+  void eventHandler(Event event) {
+    if (event.eventType == EventType.updateTheme) {
+      setState(() {});
+    }
+  }
+
+  StreamSubscription<Event>? eventConsumer;
+
+  @override
+  dispose() {
+    super.dispose();
+    eventConsumer?.cancel();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    eventConsumer = consume(eventHandler);
+    prefs.locationOrigin = html.window.location.origin;
+    myPrint("locationOrigin=${prefs.locationOrigin}");
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final inversePrimary = Theme.of(context).colorScheme.inversePrimary;
     return MaterialApp(
+      // navigatorObservers: [BannerObserver()],
       title: 'File Search',
+      debugShowCheckedModeBanner: false,
       themeMode: prefs.themeMode,
       darkTheme: ThemeData(
-        // primarySwatch: Colors.teal,
-        primaryColor: Colors.blue,
         brightness: Brightness.dark,
-        // useMaterial3: true
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(color: Colors.black54),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Colors.grey,
+        ),
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.teal,
+        ),
       ),
       theme: ThemeData(
-          // colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-          primaryColor: Colors.blueAccent,
-          brightness: Brightness.light),
-      home: const MyHomePage(),
+        drawerTheme: const DrawerThemeData(
+            // backgroundColor: Colors.orange.shade50,
+            ),
+        brightness: Brightness.light,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.teal,
+        ),
+        colorScheme: ColorScheme.fromSeed(
+          primary: Colors.teal,
+          seedColor: Colors.teal,
+          // surface: Colors.blue.shade100,
+        ),
+        useMaterial3: true,
+      ),
+      home: const Home(),
+
+      // scrollBehavior: MyCustomScrollBehavior(),
     );
   }
 }
