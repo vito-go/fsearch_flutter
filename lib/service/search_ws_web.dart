@@ -19,7 +19,6 @@ Future<String> searchTextHTTP({
   required List<String> kw,
   int fontSize = 0,
   String normalColor = "",
-  String overflowX = "auto",
   String dataType = "html",
 }) async {
   final params = <String, dynamic>{
@@ -30,7 +29,6 @@ Future<String> searchTextHTTP({
     'dataType': dataType,
     'fontSize': fontSize,
     'normalColor': normalColor,
-    'overflowX': overflowX,
     'locationOrigin': kDebugMode ? debugAddr : prefs.locationOrigin,
   };
   String url = searchPathHTTP;

@@ -1,3 +1,5 @@
+## 0.0.6
+- Remove overflow-x; word-wrap:break-word; 
 ## 0.0.5
 - Make search results colorful and configurable with font size, overflow, and color
 - Make search results of traceId clickable to show the total details of the trace

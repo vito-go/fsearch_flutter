@@ -311,6 +311,7 @@ class _HomeState extends State<Home> {
             ])),
         const VerticalDivider(),
         Expanded(flex: 50, child: right),
+        const SizedBox(width: 10),
       ],
     );
     final sunIcon=prefs.themeMode == ThemeMode.light?Icons.nightlight_round:Icons.sunny;
