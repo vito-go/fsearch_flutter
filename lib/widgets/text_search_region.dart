@@ -278,8 +278,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
             onPressed: downloadLog,
             icon: Icon(Icons.save_alt,
                 color: isDark ? Colors.white70 : Colors.black)),
-        const SizedBox(width: 20),
-      ],
+       ],
     );
 
     return Column(

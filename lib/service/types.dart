@@ -41,7 +41,7 @@ class NodeConfigInfo {
   List<String> get appNames => List<String>.generate(
       clusterNodes.length, (index) => clusterNodes[index].appName);
 
-  List<String> hosts(String appName) {
+   List<String> hosts(String appName) {
     for (var ele in clusterNodes) {
       if (ele.appName == appName) {
         List<String> hosts = [];
