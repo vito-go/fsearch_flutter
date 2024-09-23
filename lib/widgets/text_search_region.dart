@@ -42,7 +42,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
   String get normalColor => isDark ? "#ffffff" : "#000000";
 
   String buildHTML() {
-    return '<div id="container" style="font-size: ${prefs.searchHTMLFontSize}px; color: $normalColor; overflow-x: ${prefs.searchHTMLOverflowX};">$searchHTML</div>';
+    return '<div id="container" style="font-size: ${prefs.searchHTMLFontSize}px; color: $normalColor;word-wrap:break-word;">$searchHTML</div>';
   }
 
   @override
@@ -110,7 +110,6 @@ class TextSearchRegionState extends State<TextSearchRegion> {
       dataType: dataType,
       fontSize: prefs.searchHTMLFontSize,
       normalColor: normalColor,
-      overflowX: prefs.searchHTMLOverflowX,
     );
     if (needLoading) {
       setState(() {
@@ -254,13 +253,13 @@ class TextSearchRegionState extends State<TextSearchRegion> {
         const SizedBox(width: 10),
 
         myButtonSearch,
-        const SizedBox(width: 20),
-        const Align(
-          alignment: AlignmentDirectional.center,
-          child: Text("overflow-x: "),
-        ),
+        const SizedBox(width: 10),
+        // const Align(
+        //   alignment: AlignmentDirectional.center,
+        //   child: Text("overflow-x: "),
+        // ),
         // overflow-x DropdownMenu
-        dropButtonOverflowX,
+        // dropButtonOverflowX,
         slider,
         Align(
           alignment: AlignmentDirectional.center,
@@ -279,8 +278,7 @@ class TextSearchRegionState extends State<TextSearchRegion> {
             onPressed: downloadLog,
             icon: Icon(Icons.save_alt,
                 color: isDark ? Colors.white70 : Colors.black)),
-        const SizedBox(width: 20),
-      ],
+       ],
     );
 
     return Column(

@@ -8,7 +8,6 @@ import 'package:fsearch/service/search_ws_web.dart';
 
 import 'package:fsearch/service/types.dart';
 
-
 import 'package:fsearch/widgets/text_search_region.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -35,8 +34,6 @@ class _HomeState extends State<Home> {
       setState(() {});
     }
   }
-
-  List<String> get appNames => nodeConfigInfo.appNames;
 
   List<String> appNamesWithFilter(String filter) {
     List<String> items = [];
@@ -78,7 +75,10 @@ class _HomeState extends State<Home> {
               itemCheckMap["_"] = v ?? false;
               setState(() {});
             },
-            title:   const Text("Select All the Files",style: TextStyle(fontWeight: FontWeight.bold),));
+            title: const Text(
+              "Select All the Files",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ));
       }
       final fileName = items[index - 1];
 
@@ -106,7 +106,7 @@ class _HomeState extends State<Home> {
   }
 
   void aboutOnTap() async {
-    String version = "0.0.1";
+    String version = "0.0.6";
     const applicationName = "File Search";
     if (context.mounted) {
       showAboutDialog(
@@ -119,9 +119,7 @@ class _HomeState extends State<Home> {
         applicationVersion: "version: $version",
         applicationLegalese: '© All rights reserved',
         children: [
-          const SizedBox(
-            height: 5,
-          ),
+          const SizedBox(height: 5),
           const Text("author:liushihao888@gmail.com"),
           const SizedBox(
             height: 2,
@@ -179,15 +177,32 @@ class _HomeState extends State<Home> {
     }
     return Column(
       children: [
-        ListTile(
-          title: Text("App Names(${children.length})",
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          trailing: IconButton(
-              onPressed: () {
-                appName = "";
-                setState(() {});
-              },
-              icon: const Icon(Icons.refresh)),
+        // ListTile(
+        //   title: Text("App Names(${children.length})",
+        //       style: const TextStyle(fontWeight: FontWeight.bold)),
+        //   trailing: IconButton(
+        //       onPressed: () {
+        //         setState(() {
+        //           appName = "";
+        //         });
+        //         updateHomeInfo();
+        //       },
+        //       icon: const Icon(Icons.refresh)),
+        // ),
+        Row(
+          children: [
+            Text("App Names(${children.length})",
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            IconButton(
+                onPressed: () {
+                  setState(() {
+                    appName = "";
+                  });
+                  updateHomeInfo();
+                },
+                icon: const Icon(Icons.refresh)),
+          ],
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
         ),
         CupertinoSearchTextField(
           style: TextStyle(
@@ -272,48 +287,65 @@ class _HomeState extends State<Home> {
     eventConsumer = consume(eventHandler);
   }
 
+  bool hiddenHostFiles = false;
+
+  Widget get hiddenHostFilesDivider => Column(
+        children: [
+          const Expanded(child: VerticalDivider()),
+          IconButton(
+              onPressed: () {
+                setState(() {
+                  hiddenHostFiles = !hiddenHostFiles;
+                });
+              },
+              icon: hiddenHostFiles
+                  ? const Icon(Icons.arrow_circle_right)
+                  : const Icon(Icons.arrow_circle_left)),
+          const Expanded(child: VerticalDivider()),
+        ],
+      );
+
+  Widget get getClusterFiles => Column(children: [
+        const SizedBox(height: 10),
+        const Text("Clusters", style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.37,
+          child: ListView(children: buildRadioHosts()),
+        ),
+        const Divider(),
+        const Text("Files", style: TextStyle(fontWeight: FontWeight.bold)),
+        Expanded(
+            child: ListView(
+                children: nodeId == 0
+                    ? buildCheckboxListTile(allFiles, fileCheckMap)
+                    : buildCheckboxListTile(files, fileCheckMap)))
+      ]);
+  final gitRepoURL = "https://github.com/vito-go/fsearch";
+
   @override
   Widget build(BuildContext context) {
-    final mediaHeight = MediaQuery.of(context).size.height;
     final right = TextSearchRegion(
       appName: appName,
       nodeId: nodeId,
       files: fileChecked,
       searchPathHTTP: nodeConfigInfo.searchPathHTTP,
     );
+    final List<Widget> bodyChildren = [];
+    bodyChildren.add(SizedBox(width: 256, child: buildRadioAppNames()));
+    if (!hiddenHostFiles) {
+      bodyChildren.add(const VerticalDivider());
+      bodyChildren.add(Flexible(flex: 12, child: getClusterFiles));
+    }
+    bodyChildren.add(hiddenHostFilesDivider);
+    bodyChildren.add(Flexible(flex: 50, child: right));
     final Widget body = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-         Flexible(
-          flex: 10,
-          child: buildRadioAppNames(),
-        ),
-        const VerticalDivider(),
-        Flexible(
-            flex: 12,
-            child: Column(children: [
-              const SizedBox(height: 10),
-              const Text("Clusters",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(
-                height: mediaHeight * 0.37,
-                child: ListView(children: buildRadioHosts()),
-              ),
-              const Divider(),
-              const Text("Files",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              Expanded(
-                  child: ListView(
-                      children: nodeId == 0
-                          ? buildCheckboxListTile(allFiles, fileCheckMap)
-                          : buildCheckboxListTile(files, fileCheckMap)))
-            ])),
-        const VerticalDivider(),
-        Expanded(flex: 50, child: right),
-      ],
+      children: bodyChildren,
     );
-    final sunIcon=prefs.themeMode == ThemeMode.light?Icons.nightlight_round:Icons.sunny;
+    final sunIcon = prefs.themeMode == ThemeMode.light
+        ? Icons.nightlight_round
+        : Icons.sunny;
 
     return Scaffold(
       appBar: AppBar(
@@ -322,7 +354,7 @@ class _HomeState extends State<Home> {
         actions: [
           IconButton(
               onPressed: () {
-                launchUrl(Uri.parse("https://github.com/vito-go/fsearch"));
+                launchUrl(Uri.parse(gitRepoURL));
               },
               icon: githubSVGContent == ""
                   ? const Icon(Icons.link)
@@ -332,14 +364,11 @@ class _HomeState extends State<Home> {
               icon: const Icon(Icons.help_outline, color: Colors.white)),
           IconButton(
               onPressed: changeThemeMode,
-              icon:   Icon(sunIcon, color: Colors.white)),
-          IconButton(
-              onPressed: updateHomeInfo,
-              icon: const Icon(Icons.refresh, color: Colors.white)),
+              icon: Icon(sunIcon, color: Colors.white)),
           const SizedBox(width: 20),
         ],
       ),
-      body: body,
+      body: Padding(padding: const EdgeInsets.all(10), child: body),
     );
   }
 }
